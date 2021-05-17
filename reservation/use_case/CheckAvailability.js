@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34,31 +35,54 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var CheckResource = require("../reservation/use_case/CheckResource").CheckResource;
-var CheckAvailability = require("../reservation/use_case/CheckAvailability").CheckAvailability;
-var express = require('express');
-var router = express.Router();
-router.get('/:date/:resourceId', function (req, res, next) {
-    return __awaiter(this, void 0, void 0, function () {
-        var _a, date, resourceId, resource, availability, isAvailable;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    _a = req.params, date = _a.date, resourceId = _a.resourceId;
-                    resource = new CheckResource().execute(resourceId);
-                    if (!resource) {
-                        return [2 /*return*/, res.json({ "available": false })];
-                    }
-                    availability = new CheckAvailability();
-                    return [4 /*yield*/, availability.execute(date, resourceId)];
-                case 1:
-                    isAvailable = _b.sent();
-                    if (!isAvailable) {
-                        return [2 /*return*/, res.json({ "available": false })];
-                    }
-                    return [2 /*return*/, res.json({ "available": true })];
-            }
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CheckAvailability = void 0;
+var Reservation_1 = require("../services/Reservation");
+var CheckAvailability = /** @class */ (function () {
+    function CheckAvailability() {
+    }
+    CheckAvailability.prototype.execute = function (date, reservationId) {
+        return __awaiter(this, void 0, void 0, function () {
+            var availabilityService, availability, isOpen, isAvailable;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        availabilityService = new Reservation_1.ReservationService();
+                        return [4 /*yield*/, availabilityService.getTimeTables(date, reservationId)];
+                    case 1:
+                        availability = _a.sent();
+                        isOpen = availability.open && this.verifyTimeTables(date, availability.timetables);
+                        if (!isOpen) {
+                            return [2 /*return*/, false];
+                        }
+                        return [4 /*yield*/, availabilityService.getReservation(date, reservationId)
+                            //Verify if resource is available
+                        ];
+                    case 2:
+                        // Get availability from reservation service
+                        availability = _a.sent();
+                        isAvailable = this.verifyReservation(date, availability.reservations);
+                        if (!isAvailable) {
+                            return [2 /*return*/, false];
+                        }
+                        return [2 /*return*/, true];
+                }
+            });
         });
-    });
-});
-module.exports = router;
+    };
+    CheckAvailability.prototype.verifyTimeTables = function (date, timeTables) {
+        return timeTables.some(function (timeTable) {
+            return new Date(date) >= new Date(timeTable.opening)
+                && new Date(date) <= new Date(timeTable.closing);
+        });
+    };
+    CheckAvailability.prototype.verifyReservation = function (date, reservations) {
+        var result = reservations.filter(function (reservation) {
+            return new Date(date) >= new Date(reservation.reservationStart)
+                && new Date(date) <= new Date(reservation.reservationEnd);
+        });
+        return result.length === 0;
+    };
+    return CheckAvailability;
+}());
+exports.CheckAvailability = CheckAvailability;

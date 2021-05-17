@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34,31 +35,45 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var CheckResource = require("../reservation/use_case/CheckResource").CheckResource;
-var CheckAvailability = require("../reservation/use_case/CheckAvailability").CheckAvailability;
-var express = require('express');
-var router = express.Router();
-router.get('/:date/:resourceId', function (req, res, next) {
-    return __awaiter(this, void 0, void 0, function () {
-        var _a, date, resourceId, resource, availability, isAvailable;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    _a = req.params, date = _a.date, resourceId = _a.resourceId;
-                    resource = new CheckResource().execute(resourceId);
-                    if (!resource) {
-                        return [2 /*return*/, res.json({ "available": false })];
-                    }
-                    availability = new CheckAvailability();
-                    return [4 /*yield*/, availability.execute(date, resourceId)];
-                case 1:
-                    isAvailable = _b.sent();
-                    if (!isAvailable) {
-                        return [2 /*return*/, res.json({ "available": false })];
-                    }
-                    return [2 /*return*/, res.json({ "available": true })];
-            }
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReservationService = void 0;
+var axios_1 = __importDefault(require("axios"));
+var ReservationService = /** @class */ (function () {
+    function ReservationService() {
+    }
+    ReservationService.prototype.getTimeTables = function (date, reservationId) {
+        return __awaiter(this, void 0, void 0, function () {
+            var url, timetable;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        url = process.env.RESERVATION_URL + "/timetables?date=" + date + "&resourceId=" + reservationId;
+                        return [4 /*yield*/, axios_1.default.get(url)];
+                    case 1:
+                        timetable = _a.sent();
+                        return [2 /*return*/, timetable.data];
+                }
+            });
         });
-    });
-});
-module.exports = router;
+    };
+    ReservationService.prototype.getReservation = function (date, reservationId) {
+        return __awaiter(this, void 0, void 0, function () {
+            var url, reservation;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        url = process.env.RESERVATION_URL + "/reservations?date=" + date + "&resourceId=" + reservationId;
+                        return [4 /*yield*/, axios_1.default.get(url)];
+                    case 1:
+                        reservation = _a.sent();
+                        return [2 /*return*/, reservation.data];
+                }
+            });
+        });
+    };
+    return ReservationService;
+}());
+exports.ReservationService = ReservationService;
